@@ -99,7 +99,8 @@ class MainApp(App):
 					self.config.set('wearvesc','address', instance.address)
 					self.config.write()
 					self.scanning = False
-					self.root.current = 'settings'
+					self.root.transition.direction = 'right'
+					self.root.current = 'data'
 
 				if self.scanning:
 					scanned_address = []
