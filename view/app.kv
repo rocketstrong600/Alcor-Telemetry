@@ -91,6 +91,8 @@
 					GridLayout:
 						id: devices
 						cols: 1
+						row_force_default: True
+						row_default_height: '32dp'
 						size_hint: None, None
 						width: root.width
 						height: self.minimum_height
@@ -100,12 +102,20 @@
 							halign: 'center'
 							valign: 'middle'
 							background_color: (0,0,0,0)
-							size_hint_y: None
-							height: '30dp'
 							on_release:
 								app.scanning = True
 								app.root.transition.direction = 'left'
 								app.root.current = 'scan'
+						AnchorLayout:
+							NumericInput:
+								id: cells
+								title: 'Cells'
+								value: int(app.config.get('wearvesc','cells'))
+								min: 1
+								max: 24
+								step: 1
+								size_hint_x: None
+								width: '130dp'
 				Button:
 					id: back
 					text: 'Back'
@@ -116,6 +126,7 @@
 					on_release: 
 						app.root.transition.direction = 'right'
 						app.root.current = 'data'
+						app.update_config()
 
 <ScanScreen>:
 	FloatLayout:
@@ -134,6 +145,8 @@
 					GridLayout:
 						id: devices
 						cols: 1
+						row_force_default: True
+						row_default_height: '32dp'
 						size_hint: None, None
 						width: root.width
 						height: self.minimum_height
@@ -148,3 +161,23 @@
 						app.root.transition.direction = 'right'
 						app.root.current = 'settings'
 						app.scanning = False
+
+
+<NumericInput>:
+	orientation: 'horizontal'
+	Label:
+		text: str(root.title)
+	Button:
+		text: '-'
+		disabled: root.value <= root.min
+		on_release:
+			root.value -= root.step
+			root.value = max(root.value, root.min)
+	Label:
+		text: str(root.value)
+	Button:
+		text: '+'
+		disabled: root.value >= root.max
+		on_release:
+			root.value += root.step
+			root.value = min(root.value, root.max)

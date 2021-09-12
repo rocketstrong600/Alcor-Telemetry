@@ -1,10 +1,14 @@
 import kivy
 from kivy import logger
+from kivy import config
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.button import Button
+from kivy.properties import NumericProperty
+from kivy.properties import StringProperty
+from kivy.uix.boxlayout import BoxLayout
 
 from datetime import datetime
 #import plyer
@@ -16,16 +20,11 @@ import vesc
 import struct
 
 kivy.require('1.9.1')
+INF = float('inf')
 
 UART_SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_RX_CHAR_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
 UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
-
-# create packet that requests current_in(), speed, voltage_in, battery_level from COMM_GET_VALUES_SETUP_SELECTIVE
-packet_get_values = vesc.Packet()
-packet_get_values.size = 2
-packet_get_values.payload = struct.pack('>BI', 51, (1 << 3) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 8))
-packet_get_values.encode()
 
 class DataScreen(Screen):
     pass
@@ -36,6 +35,14 @@ class SettingsScreen(Screen):
 class ScanScreen(Screen):
     pass
 
+
+class NumericInput(BoxLayout):
+	title = StringProperty('')
+	value = NumericProperty(0)
+	min = NumericProperty(-INF)
+	max = NumericProperty(INF)
+	step = NumericProperty(1)
+
 class MainApp(App):
 	def __init__(self):
 		super().__init__()
@@ -45,8 +52,7 @@ class MainApp(App):
 		self.buffer = vesc.Buffer()
 
 	def build(self):
-		#self.title = "Telemetry System"
-		#self.root = Builder.load_file('view/app.kv')
+		self.title = "Telemetry System"
 		Builder.load_file('view/app.kv')
 		self.screen_manager = ScreenManager()
 
@@ -58,13 +64,9 @@ class MainApp(App):
 		self.screen_manager.add_widget(self.Settings_Screen)
 		self.screen_manager.add_widget(self.Scan_Screen)
 
-		#sm.switch_to(DataScreen())
-
 		return self.screen_manager
-		#return self.root
 
 	def build_config(self, config):
-		#E2:2F:B4:84:6E:B2
 		config.setdefaults('wearvesc', {
 			'address': 'FA:B2:4E:80:50:90',
 			'poll': '0.2',
@@ -78,6 +80,10 @@ class MainApp(App):
 		Logger.info(f'WearVesc: Paused!!')
 		return True
 
+	def update_config(self):
+		self.config.set('wearvesc','cells', self.Settings_Screen.ids.cells.value)
+		self.config.write()
+
 	async def timekeeper(self):
 		while self.running:
 			time = datetime.now()
@@ -88,6 +94,13 @@ class MainApp(App):
 			await asyncio.sleep(0.15)
 
 	async def bluetooth(self):
+		# create packet that requests current_in(), speed, voltage_in, battery_level from COMM_GET_VALUES_SETUP_SELECTIVE
+		packet_get_values = vesc.Packet()
+		packet_get_values.size = 2
+		packet_get_values.payload = struct.pack('>BI', 51, (1 << 3) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 8))
+		packet_get_values.encode()
+
+
 		while self.running:
 			try:
 				self.Data_Screen.ids.status.text = "Disconnected"
@@ -97,7 +110,7 @@ class MainApp(App):
 				def setAddress(instance):
 					Logger.info(f'WearVesc: Setting Address to {instance.address}')
 					self.config.set('wearvesc','address', instance.address)
-					self.config.write()
+					self.update_config()
 					self.scanning = False
 					self.root.transition.direction = 'right'
 					self.root.current = 'data'
@@ -107,7 +120,7 @@ class MainApp(App):
 					def find_uart_device(device, adv):
 						if UART_SERVICE_UUID.lower() in adv.service_uuids and not device.address in scanned_address:
 							Logger.info(f'WearVesc: {str(device)[:24]} {device.rssi}dB')
-							button = Button(text=str(device.name),size_hint_y=None, height='25dp', on_release=setAddress)
+							button = Button(text=str(device.name), on_release=setAddress)
 							button.address = str(device.address)
 							self.Scan_Screen.ids.devices.add_widget(button)
 							scanned_address.append(device.address)
@@ -141,7 +154,8 @@ class MainApp(App):
 
 					if found:
 						Logger.info(f'WearVesc: Found Packet {str(packet)}')
-						if packet.payload[0:5] == struct.pack('>BI', 51, (1 << 3) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 8)):
+						if packet.payload[0:len(packet_get_values.payload)] == packet_get_values.payload:
+
 							dutycycle : float = struct.unpack('>h', packet.payload[9:11])[0] / 10
 							speed : float = (struct.unpack('>i', packet.payload[11:15])[0] / 1000)* 3.6
 							voltage : float = struct.unpack('>H', packet.payload[15:17])[0] / 10
