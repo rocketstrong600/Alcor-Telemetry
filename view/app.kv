@@ -1,0 +1,102 @@
+#:kivy 1.9.1
+<DataScreen>:
+	FloatLayout:
+		BoxLayout:
+			BoxLayout:
+				orientation: 'vertical'
+				Label:
+					id: status
+					text: 'Disconnected'
+					font_size: '8dp'
+					halign: 'center'
+					valign: 'middle'
+					pos_hint: {'right': 1.2}
+				Label:
+					id: cell
+					text: '0.0 V'
+					font_size: '15dp'
+					halign: 'center'
+					valign: 'middle'
+					size_hint: (1, 0.2)
+				Button:
+					id: exit
+					text: 'Exit'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					on_release: app.stop()
+					pos_hint: {'right': 1.2}
+			BoxLayout:
+				orientation: 'vertical'
+				padding_top: 20
+				Label:
+					id: time
+					text: '--:--'
+					font_size: '20dp'
+					halign: 'center'
+					valign: 'middle'
+				Label:
+					id: speed
+					text: '0.0'
+					font_size: '55dp'
+					halign: 'center'
+					valign: 'middle'
+				Label:
+					id: dutycycle
+					text: '0%'
+					font_size: '15dp'
+					halign: 'center'
+					valign: 'middle'
+			BoxLayout:
+				orientation: 'vertical'
+				Label:
+					id: voltage
+					text: '0.0v'
+					font_size: '15dp'
+					halign: 'center'
+					valign: 'middle'
+					pos_hint: {'right': 0.8}
+				Label:
+					id: current
+					text: '0.0 A'
+					font_size: '15dp'
+					halign: 'center'
+					valign: 'middle'
+					size_hint: (1, 0.2)
+				Button:
+					id: settings
+					text: 'Config'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					on_release: app.root.current = 'settings'
+					pos_hint: {'right': 0.8}
+
+<SettingsScreen>:
+	FloatLayout:
+		BoxLayout:
+			BoxLayout:
+				orientation: 'vertical'
+				Label:
+					text: 'Settigns'
+					font_size: '10dp'
+					halign: 'center'
+					valign: 'middle'
+				Button:
+					id: back
+					text: 'Back'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					on_release: app.root.current = 'data'
+
+<ScanScreen>:
+	FloatLayout:
+		BoxLayout:
+			BoxLayout:
+				orientation: 'vertical'
+				Label:
+					text: 'Scanning'
+					font_size: '55dp'
+					halign: 'center'
+					valign: 'middle'

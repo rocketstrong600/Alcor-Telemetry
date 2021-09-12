@@ -1,0 +1,5 @@
+buildozer==1.2.0
+Kivy==2.0.0
+pythoncrc==1.21
+plyer==2.0.0
+git+git://github.com/xloem/bleak.git@p4a-beta
