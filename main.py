@@ -4,6 +4,7 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.button import Button
 
 from datetime import datetime
 #import plyer
@@ -40,6 +41,7 @@ class MainApp(App):
 		super().__init__()
 		self.label = None
 		self.running = True
+		self.scanning = False
 		self.buffer = vesc.Buffer()
 
 	def build(self):
@@ -73,7 +75,7 @@ class MainApp(App):
 		self.running = False
 	
 	def on_pause(self):
-		Logger.info(f'Application: Paused!!')
+		Logger.info(f'WearVesc: Paused!!')
 		return True
 
 	async def timekeeper(self):
@@ -89,13 +91,47 @@ class MainApp(App):
 		while self.running:
 			try:
 				self.Data_Screen.ids.status.text = "Disconnected"
-				device = await bleak.BleakScanner.find_device_by_address(self.config.get('wearvesc', 'address'), 10)
+
+				#scann for devices
+
+				def setAddress(instance):
+					Logger.info(f'WearVesc: Setting Address to {instance.address}')
+					self.config.set('wearvesc','address', instance.address)
+					self.config.write()
+					self.scanning = False
+					self.root.current = 'settings'
+
+				if self.scanning:
+					scanned_address = []
+					def find_uart_device(device, adv):
+						if UART_SERVICE_UUID.lower() in adv.service_uuids and not device.address in scanned_address:
+							Logger.info(f'WearVesc: {str(device)[:24]} {device.rssi}dB')
+							button = Button(text=str(device.name),size_hint_y=None, height='25dp', on_release=setAddress)
+							button.address = str(device.address)
+							self.Scan_Screen.ids.devices.add_widget(button)
+							scanned_address.append(device.address)
+					
+					scanner = bleak.BleakScanner()
+					scanner.register_detection_callback(find_uart_device)
+					scanned_address.clear()
+					self.Scan_Screen.ids.devices.clear_widgets()
+					await scanner.start()
+					Logger.info(f'WearVesc: Scanning For Devices')
+					await asyncio.sleep(5.0)
+					await scanner.stop()
+
+					await asyncio.sleep(10)
+
+					continue
+
+				device = await bleak.BleakScanner.find_device_by_address(self.config.get('wearvesc', 'address'), 5)
+
 				if device == None:
-					Logger.info(f'Application: Device Not Found')
+					Logger.info(f'WearVesc: Device Not Found')
 					continue
 
 				def handle_disconnect(_: bleak.BleakClient):
-					Logger.info(f'Application: Device Disconnected')
+					Logger.info(f'WearVesc: Device Disconnected')
 					self.Data_Screen.ids.status.text = "Disconnected"
 
 				def handle_rx(_: int, data: bytearray):
@@ -103,7 +139,7 @@ class MainApp(App):
 					found, packet = self.buffer.next_packet()
 
 					if found:
-						Logger.info(f'Application: Found Packet {str(packet)}')
+						Logger.info(f'WearVesc: Found Packet {str(packet)}')
 						if packet.payload[0:5] == struct.pack('>BI', 51, (1 << 3) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 8)):
 							dutycycle : float = struct.unpack('>h', packet.payload[9:11])[0] / 10
 							speed : float = (struct.unpack('>i', packet.payload[11:15])[0] / 1000)* 3.6
@@ -125,9 +161,7 @@ class MainApp(App):
 					if client.is_connected:
 						self.Data_Screen.ids.status.text = "Connected"
 
-					loop = asyncio.get_event_loop()
-
-					while self.running:
+					while self.running and not self.scanning:
 						await asyncio.sleep(float(self.config.get('wearvesc', 'poll')))
 						await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_values.packet))
 

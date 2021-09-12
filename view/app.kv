@@ -83,12 +83,22 @@
 					halign: 'center'
 					valign: 'middle'
 				Button:
+					id: scan
+					text: 'Scan'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					on_release:
+						app.scanning = True
+						app.root.current = 'scan'
+				Button:
 					id: back
 					text: 'Back'
 					halign: 'center'
 					valign: 'middle'
 					background_color: (0,0,0,0)
-					on_release: app.root.current = 'data'
+					on_release: 
+						app.root.current = 'data'
 
 <ScanScreen>:
 	FloatLayout:
@@ -97,6 +107,24 @@
 				orientation: 'vertical'
 				Label:
 					text: 'Scanning'
-					font_size: '55dp'
+					font_size: '10dp'
 					halign: 'center'
 					valign: 'middle'
+				ScrollView:
+					do_scroll_x: False
+					do_scroll_y: True
+					GridLayout:
+						id: devices
+						cols: 1
+						size_hint: None, None
+						width: root.width
+						height: self.minimum_height
+				Button:
+					id: back
+					text: 'Back'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					on_release:
+						app.root.current = 'settings'
+						app.scanning = False
