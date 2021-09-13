@@ -89,23 +89,34 @@
 					do_scroll_x: False
 					do_scroll_y: True
 					GridLayout:
-						id: devices
+						id: settings
 						cols: 1
 						row_force_default: True
-						row_default_height: '32dp'
+						row_default_height: '30dp'
 						size_hint: None, None
 						width: root.width
 						height: self.minimum_height
-						Button:
-							id: scan
-							text: 'Start Scan'
-							halign: 'center'
-							valign: 'middle'
-							background_color: (0,0,0,0)
-							on_release:
-								app.scanning = True
-								app.root.transition.direction = 'left'
-								app.root.current = 'scan'
+						spacing: (0, '3dp')
+						AnchorLayout:
+							Button:
+								id: scan
+								text: 'Start Scan'
+								halign: 'center'
+								valign: 'middle'
+								size_hint_x: None
+								width: '140dp'
+								#background_color: (0,0,0,0)
+								on_release:
+									app.scanning = True
+									app.root.transition.direction = 'left'
+									app.root.current = 'scan'
+						AnchorLayout:
+							Spinner:
+								id: unit
+								text: app.config.get('wearvesc','unit')
+								values: 'KMH', 'MPH'
+								size_hint_x: None
+								width: '140dp'
 						AnchorLayout:
 							NumericInput:
 								id: cells
@@ -115,7 +126,17 @@
 								max: 24
 								step: 1
 								size_hint_x: None
-								width: '130dp'
+								width: '140dp'
+						AnchorLayout:
+							NumericInput:
+								id: poll
+								title: 'HZ'
+								value: int(float(app.config.get('wearvesc','poll')))
+								min: 1
+								max: 12
+								step: 1
+								size_hint_x: None
+								width: '140dp'
 				Button:
 					id: back
 					text: 'Back'
@@ -146,10 +167,11 @@
 						id: devices
 						cols: 1
 						row_force_default: True
-						row_default_height: '32dp'
+						row_default_height: '30dp'
 						size_hint: None, None
 						width: root.width
 						height: self.minimum_height
+						spacing: (0, '3dp')
 				Button:
 					id: back
 					text: 'Back'

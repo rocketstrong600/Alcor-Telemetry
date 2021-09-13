@@ -53,6 +53,7 @@ class MainApp(App):
 
 	def build(self):
 		self.title = "Telemetry System"
+		self.icon = 'icon/1024.png'
 		Builder.load_file('view/app.kv')
 		self.screen_manager = ScreenManager()
 
@@ -69,9 +70,16 @@ class MainApp(App):
 	def build_config(self, config):
 		config.setdefaults('wearvesc', {
 			'address': 'FA:B2:4E:80:50:90',
-			'poll': '0.2',
+			'poll': '5',
 			'cells': '12',
+			'unit': 'KMH',
 		})
+
+	def update_config(self):
+		self.config.set('wearvesc','cells', self.Settings_Screen.ids.cells.value)
+		self.config.set('wearvesc','unit', self.Settings_Screen.ids.unit.text)
+		self.config.set('wearvesc','poll', self.Settings_Screen.ids.poll.value)
+		self.config.write()
 
 	def on_stop(self):
 		self.running = False
@@ -80,9 +88,7 @@ class MainApp(App):
 		Logger.info(f'WearVesc: Paused!!')
 		return True
 
-	def update_config(self):
-		self.config.set('wearvesc','cells', self.Settings_Screen.ids.cells.value)
-		self.config.write()
+
 
 	async def timekeeper(self):
 		while self.running:
@@ -99,7 +105,6 @@ class MainApp(App):
 		packet_get_values.size = 2
 		packet_get_values.payload = struct.pack('>BI', 51, (1 << 3) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 8))
 		packet_get_values.encode()
-
 
 		while self.running:
 			try:
@@ -155,9 +160,12 @@ class MainApp(App):
 					if found:
 						Logger.info(f'WearVesc: Found Packet {str(packet)}')
 						if packet.payload[0:len(packet_get_values.payload)] == packet_get_values.payload:
-
+							if self.config.get('wearvesc','unit') == 'KMH':
+								conversion_factor = 3.6
+							else:
+								conversion_factor = 2.237
 							dutycycle : float = struct.unpack('>h', packet.payload[9:11])[0] / 10
-							speed : float = (struct.unpack('>i', packet.payload[11:15])[0] / 1000)* 3.6
+							speed : float = (struct.unpack('>i', packet.payload[11:15])[0] / 1000) * conversion_factor
 							voltage : float = struct.unpack('>H', packet.payload[15:17])[0] / 10
 							current : float = struct.unpack('>i', packet.payload[5:9])[0] / 100
 
@@ -177,7 +185,7 @@ class MainApp(App):
 						self.Data_Screen.ids.status.text = "Connected"
 
 					while self.running and not self.scanning:
-						await asyncio.sleep(float(self.config.get('wearvesc', 'poll')))
+						await asyncio.sleep(1/int(self.config.get('wearvesc', 'poll')))
 						await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_values.packet))
 
 			except:
