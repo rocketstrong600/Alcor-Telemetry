@@ -154,6 +154,7 @@ class MainApp(App):
 					self.Data_Screen.ids.status.text = "Disconnected"
 
 				def handle_rx(_: int, data: bytearray):
+					#Logger.info(f'WearVesc: Got Data {str(data)}')
 					self.buffer.extend(data)
 					found, packet = self.buffer.next_packet()
 
