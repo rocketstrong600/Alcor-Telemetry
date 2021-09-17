@@ -184,6 +184,45 @@
 						app.root.current = 'settings'
 						app.scanning = False
 
+<DisclosureScreen>:
+	FloatLayout:
+		BoxLayout:
+			BoxLayout:
+				orientation: 'vertical'
+				Label:
+					text: 'Location use'
+					font_size: '14dp'
+					halign: 'center'
+					valign: 'middle'
+					size_hint_y: 0.4
+				ScrollView:
+					do_scroll_x: False
+					do_scroll_y: True
+					Label:
+						text: 'This app requests location\nto enable Bluetooth LE.\nNo GPS/user location used.\nNo Location is derived.'
+						font_size: '12dp'
+						valign: 'middle'
+				Button:
+					id: Allow
+					text: 'Allow'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					size_hint_y: 0.4
+					on_release:
+						app.root.transition.direction = 'right'
+						app.root.current = 'data'
+				Button:
+					id: Exit
+					text: 'Exit'
+					halign: 'center'
+					valign: 'middle'
+					background_color: (0,0,0,0)
+					size_hint_y: 0.4
+					on_release:
+						app.stop()
+
+
 
 <NumericInput>:
 	orientation: 'horizontal'

@@ -143,3 +143,5 @@ cython_debug/
 
 # MYPROGRAM
 main.ini
+build.sh
+!buildozer.spec

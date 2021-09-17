@@ -9,6 +9,11 @@ from kivy.uix.button import Button
 from kivy.properties import NumericProperty
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.utils import platform
+
+if kivy.utils.platform == 'android':
+	from android.permissions import check_permission
+	from android.permissions import Permission
 
 from datetime import datetime
 #import plyer
@@ -35,6 +40,9 @@ class SettingsScreen(Screen):
 class ScanScreen(Screen):
     pass
 
+class DisclosureScreen(Screen):
+    pass
+
 
 class NumericInput(BoxLayout):
 	title = StringProperty('')
@@ -56,14 +64,21 @@ class MainApp(App):
 		self.icon = 'icon/1024.png'
 		Builder.load_file('view/app.kv')
 		self.screen_manager = ScreenManager()
-
 		self.Data_Screen = DataScreen(name='data')
 		self.Settings_Screen = SettingsScreen(name='settings')
 		self.Scan_Screen = ScanScreen(name='scan')
+		self.Disclosure_Screen = DisclosureScreen(name='disclosure')
 
 		self.screen_manager.add_widget(self.Data_Screen)
 		self.screen_manager.add_widget(self.Settings_Screen)
 		self.screen_manager.add_widget(self.Scan_Screen)
+		self.screen_manager.add_widget(self.Disclosure_Screen)
+
+		#self.screen_manager.current = 'disclosure'
+
+		if kivy.utils.platform == 'android':
+			if not check_permission(Permission.ACCESS_FINE_LOCATION):
+				self.screen_manager.current = 'disclosure'
 
 		return self.screen_manager
 
@@ -100,6 +115,7 @@ class MainApp(App):
 			await asyncio.sleep(0.15)
 
 	async def bluetooth(self):
+
 		# create packet that requests current_in(), speed, voltage_in, battery_level from COMM_GET_VALUES_SETUP_SELECTIVE
 		packet_get_values = vesc.Packet()
 		packet_get_values.size = 2
@@ -110,6 +126,9 @@ class MainApp(App):
 			try:
 				self.Data_Screen.ids.status.text = "Disconnected"
 
+				if self.screen_manager.current == 'disclosure':
+					await asyncio.sleep(2)
+					continue
 				#scann for devices
 
 				def setAddress(instance):
