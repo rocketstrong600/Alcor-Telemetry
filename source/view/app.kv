@@ -49,13 +49,16 @@
 					valign: 'middle'
 			BoxLayout:
 				orientation: 'vertical'
-				Label:
+				Button:
 					id: voltage
 					text: '0.0v'
 					font_size: '15dp'
 					halign: 'center'
 					valign: 'middle'
 					pos_hint: {'right': 0.8}
+					background_color: (0,0,0,0)
+					on_release:
+						app.stop()
 				Label:
 					id: current
 					text: '0.0 A'
@@ -199,12 +202,12 @@
 					do_scroll_x: False
 					do_scroll_y: True
 					Label:
-						text: 'This app requests location\nto enable Bluetooth LE.\nNo GPS/user location used.\nNo Location is derived.'
+						text: 'This app requests location\nto only enable Bluetooth LE.'
 						font_size: '12dp'
 						valign: 'middle'
 				Button:
 					id: Allow
-					text: 'Allow'
+					text: 'Next'
 					halign: 'center'
 					valign: 'middle'
 					background_color: (0,0,0,0)

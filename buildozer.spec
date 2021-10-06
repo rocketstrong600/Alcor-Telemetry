@@ -29,7 +29,7 @@ source.include_patterns = view/*
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1.4.2
+version = 0.1.5.1
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -37,7 +37,7 @@ version = 0.1.4.2
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,git+git://github.com/xloem/bleak.git@p4a-beta,async_to_sync,plyer,pythoncrc
+requirements = python3,kivy,git+git://github.com/rocketstrong600/bleak.git@p4a-beta,async_to_sync,plyer,pythoncrc
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
@@ -89,7 +89,7 @@ fullscreen = 0
 android.permissions = INTERNET,BLUETOOTH,BLUETOOTH_ADMIN,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,BLUETOOTH_CONNECT,BLUETOOTH_SCAN,BLUETOOTH_ADVERTISE,WAKE_LOCK
 
 # (int) Target Android API, should be as high as possible.
-android.api = 28
+android.api = 30
 
 # (int) Minimum API your APK will support.
 android.minapi = 28
