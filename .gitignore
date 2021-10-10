@@ -145,3 +145,4 @@ cython_debug/
 main.ini
 build.sh
 !buildozer.spec
+.vscode
