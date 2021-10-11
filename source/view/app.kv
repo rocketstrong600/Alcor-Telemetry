@@ -1,156 +1,172 @@
 #:kivy 1.9.1
-<DataScreen>:
+#:import Label kivy.core.text.Label
+<DataScreenPrimary>:
 	FloatLayout:
-		BoxLayout:
-			BoxLayout:
-				orientation: 'vertical'
-				Label:
-					id: status
-					text: 'Disconnected'
-					font_size: '8dp'
-					halign: 'center'
-					valign: 'middle'
-					pos_hint: {'right': 1.2}
-				Label:
-					id: cell
-					text: '0.0 V'
-					font_size: '15dp'
-					halign: 'center'
-					valign: 'middle'
-					size_hint: (1, 0.2)
-				Button:
-					id: exit
-					text: 'Exit'
-					halign: 'center'
-					valign: 'middle'
-					background_color: (0,0,0,0)
-					on_release: app.stop()
-					pos_hint: {'right': 1.2}
-			BoxLayout:
-				orientation: 'vertical'
-				padding_top: 20
-				Label:
-					id: time
-					text: '--:--'
-					font_size: '20dp'
-					halign: 'center'
-					valign: 'middle'
-				Label:
-					id: speed
-					text: '0.0'
-					font_size: '55dp'
-					halign: 'center'
-					valign: 'middle'
-				Label:
-					id: dutycycle
-					text: '0%'
-					font_size: '15dp'
-					halign: 'center'
-					valign: 'middle'
-			BoxLayout:
-				orientation: 'vertical'
-				Button:
-					id: voltage
-					text: '0.0v'
-					font_size: '15dp'
-					halign: 'center'
-					valign: 'middle'
-					pos_hint: {'right': 0.8}
-					background_color: (0,0,0,0)
-					on_release:
-						app.stop()
-				Label:
-					id: current
-					text: '0.0 A'
-					font_size: '15dp'
-					halign: 'center'
-					valign: 'middle'
-					size_hint: (1, 0.2)
-				Button:
-					id: settings
-					text: 'Config'
-					halign: 'center'
-					valign: 'middle'
-					background_color: (0,0,0,0)
-					on_release:
-						app.root.transition.direction = 'left'
-						app.root.current = 'settings'
-					pos_hint: {'right': 0.8}
+		Label:
+			id: speed
+			text: '0.0'
+			font_size: self.width*0.248
+		CircularLayout:
+			id: container
+			start_from: 90
+			degree_spacing: 45
+			pos_hint: {"center_x": .5, "center_y": .5}
+			circular_radius: (self.width*0.73)/2
+			Label:
+				id: time
+				halign: 'center'
+				valign: 'middle'
+				text: '--:--'
+				font_size: self.width*0.38
+			SwapLabel:
+				id: voltage
+				halign: 'center'
+				valign: 'middle'
+				font_size: self.width*0.225
+				primary_text: '0.0v'
+				secondary_text: '0.0v'
+			Label:
+				id: current
+				halign: 'center'
+				valign: 'middle'
+				font_size: self.width*0.225
+				text: '0.0A'
+			CircularProgressBar:
+				id: battery
+				value: 0
+				widget_size: int(self.width*0.70)
+				thickness: int(self.width*0.05)
+				progress_colour: (91/255, 194/255, 54/255)
+				cap_style: 'round'
+				cap_precision: 10
+				fix_cap: True
+				label: Label(text="{}%", font_size=self.width*0.225)
+			CircularProgressBar:
+				id: dutycycle
+				value: 0
+				widget_size: int(self.width*0.70)
+				thickness: int(self.width*0.05)
+				cap_style: 'round'
+				cap_precision: 10
+				fix_cap: True
+				label: Label(text="{}%", font_size=self.width*0.225)
+			Button:
+				id: state
+				halign: 'center'
+				valign: 'middle'
+				font_size: self.width*0.225
+				text: 'OFF'
+				background_color: (0,0,0,0)
+			SwapLabel:
+				id: temp
+				halign: 'center'
+				valign: 'middle'
+				font_size: self.width*0.225
+				primary_text: 'FET\n0°C'
+				secondary_text: 'MOT\n0°C'
+			Label:
+				id: status
+				halign: 'center'
+				valign: 'middle'
+				font_size: self.width*0.125
+				text: 'Disconnected'
+
+<DataScreenSecondary>:
+	FloatLayout:
 
 <SettingsScreen>:
 	FloatLayout:
 		BoxLayout:
-			BoxLayout:
-				orientation: 'vertical'
-				Label:
-					text: 'Settings'
-					font_size: '10dp'
-					halign: 'center'
-					valign: 'middle'
-					size_hint_y: 0.4
-				ScrollView:
-					do_scroll_x: False
-					do_scroll_y: True
-					GridLayout:
-						id: settings
-						cols: 1
-						row_force_default: True
-						row_default_height: '30dp'
-						size_hint: None, None
-						width: root.width
-						height: self.minimum_height
-						spacing: (0, '3dp')
-						AnchorLayout:
-							Button:
-								id: scan
-								text: 'Start Scan'
-								halign: 'center'
-								valign: 'middle'
-								size_hint_x: None
-								width: '140dp'
-								#background_color: (0,0,0,0)
-								on_release:
-									app.scanning = True
-									app.root.transition.direction = 'left'
-									app.root.current = 'scan'
-						AnchorLayout:
-							Spinner:
-								id: unit
-								text: app.config.get('wearvesc','unit')
-								values: 'KMH', 'MPH'
-								size_hint_x: None
-								width: '140dp'
-						AnchorLayout:
-							NumericInput:
-								id: cells
-								title: 'Cells'
-								value: int(app.config.get('wearvesc','cells'))
-								min: 1
-								max: 24
-								step: 1
-								size_hint_x: None
-								width: '140dp'
-						AnchorLayout:
-							NumericInput:
-								id: poll
-								title: 'HZ'
-								value: int(float(app.config.get('wearvesc','poll')))
-								min: 1
-								max: 12
-								step: 1
-								size_hint_x: None
-								width: '140dp'
-				Button:
-					id: back
-					text: 'Back'
-					halign: 'center'
-					valign: 'middle'
-					background_color: (0,0,0,0)
-					size_hint_y: 0.4
-					on_release: 
-						app.root.transition.direction = 'right'
-						app.root.current = 'data'
-						app.update_config()
+			orientation: 'vertical'
+			Label:
+				text: 'Settings'
+				font_size: '10dp'
+				halign: 'center'
+				valign: 'middle'
+				size_hint_y: 0.4
+			ScrollView:
+				do_scroll_x: False
+				do_scroll_y: True
+				GridLayout:
+					id: settings
+					cols: 1
+					row_force_default: True
+					row_default_height: '30dp'
+					size_hint: None, None
+					width: root.width
+					height: self.minimum_height
+					spacing: (0, '3dp')
+					AnchorLayout:
+						Button:
+							id: scan
+							text: 'Start Scan'
+							halign: 'center'
+							valign: 'middle'
+							size_hint_x: None
+							width: '140dp'
+							#background_color: (0,0,0,0)
+							on_release:
+								app.scanning = True
+								app.root.transition.direction = 'left'
+								app.root.current = 'scan'
+					AnchorLayout:
+						Spinner:
+							id: unit
+							text: app.config.get('wearvesc','unit')
+							values: 'KMH', 'MPH'
+							size_hint_x: None
+							width: '140dp'
+					AnchorLayout:
+						NumericInput:
+							id: cells
+							title: 'Cells'
+							value: int(app.config.get('wearvesc','cells'))
+							min: 1
+							max: 24
+							step: 1
+							size_hint_x: None
+							width: '140dp'
+					AnchorLayout:
+						NumericInput:
+							id: cmax
+							title: 'CHV'
+							value: float(app.config.get('wearvesc','cmax'))
+							min: 0.0
+							max: 9.0
+							step: 0.1
+							size_hint_x: None
+							width: '140dp'
+					AnchorLayout:
+						NumericInput:
+							id: cmin
+							title: 'CLV'
+							value: float(app.config.get('wearvesc','cmin'))
+							min: 0.0
+							max: 9.0
+							step: 0.1
+							size_hint_x: None
+							width: '140dp'
+					AnchorLayout:
+						NumericInput:
+							id: poll
+							title: 'HZ'
+							value: int(float(app.config.get('wearvesc','poll')))
+							min: 1
+							max: 12
+							step: 1
+							size_hint_x: None
+							width: '140dp'
+			Button:
+				id: back
+				text: 'Back'
+				halign: 'center'
+				valign: 'middle'
+				background_color: (0,0,0,0)
+				size_hint_y: 0.4
+				on_release: 
+					app.root.transition.direction = 'right'
+					app.root.current = 'dataPrimary'
+					app.update_config()
 
 <ScanScreen>:
 	FloatLayout:
@@ -214,7 +230,7 @@
 					size_hint_y: 0.4
 					on_release:
 						app.root.transition.direction = 'right'
-						app.root.current = 'data'
+						app.root.current = 'dataPrimary'
 				Button:
 					id: Exit
 					text: 'Exit'
@@ -238,10 +254,15 @@
 			root.value -= root.step
 			root.value = max(root.value, root.min)
 	Label:
-		text: str(root.value)
+		text: str(round(root.value, 2))
 	Button:
 		text: '+'
 		disabled: root.value >= root.max
 		on_release:
 			root.value += root.step
 			root.value = min(root.value, root.max)
+
+<SwapLabel>:
+	background_color: (0,0,0,0)
+	on_release:
+		root.switch()

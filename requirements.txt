@@ -1,5 +1,7 @@
-buildozer==1.2.0
 Kivy==2.0.0
 pythoncrc==1.21
 plyer==2.0.0
+cython==0.29.24
+git+https://github.com/kivy/python-for-android.git@develop
 git+git://github.com/rocketstrong600/bleak.git@p4a-beta
+git+git://github.com/misl6/buildozer.git@feat/aab-support
