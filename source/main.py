@@ -216,8 +216,6 @@ class MainApp(App):
 			await asyncio.sleep(0.15)
 
 	async def bluetooth(self):
-		#wait for app to start
-		await asyncio.sleep(5)
 		# create packet that requests current_in(), speed, voltage_in, battery_level from COMM_GET_VALUES_SETUP_SELECTIVE
 		packet_get_values = vesc.Packet()
 		packet_get_values.size = 2
@@ -228,6 +226,62 @@ class MainApp(App):
 		packet_get_ballance.size = 2
 		packet_get_ballance.payload = struct.pack('>B', 79)
 		packet_get_ballance.encode()
+		self.is_balance = True
+
+		def handle_disconnect(_: bleak.BleakClient):
+			Logger.info(f'WearVesc: Device Disconnected')
+			self.Data_Screen_Primary.ids.status.text = "Disconnected"
+
+		def handle_rx(_: int, data: bytearray):
+			#Logger.info(f'WearVesc: Got Data {str(data)}')
+			self.buffer.extend(data)
+			found, packet = self.buffer.next_packet()
+
+			if found:
+				Logger.info(f'WearVesc: Found Packet {str(packet)}')
+				if packet.payload[0:len(packet_get_values.payload)] == packet_get_values.payload:
+					if self.config.get('wearvesc','unit') == 'KMH':
+						conversion_factor = 3.6
+					else:
+						conversion_factor = 2.237
+					mostemp : float = struct.unpack('>H', packet.payload[5:7])[0] / 10
+					mottemp : float = struct.unpack('>H', packet.payload[7:9])[0] / 10
+					current : float = struct.unpack('>i', packet.payload[9:13])[0] / 100
+					dutycycle : float = struct.unpack('>h', packet.payload[13:15])[0] / 10
+					speed : float = (struct.unpack('>i', packet.payload[15:19])[0] / 1000) * conversion_factor
+					voltage : float = struct.unpack('>H', packet.payload[19:21])[0] / 10
+
+					cells : int = int(self.config.get('wearvesc', 'cells'))
+					cellv : float = voltage / cells
+					cmin : float = float(self.config.get('wearvesc', 'cmin'))
+					cmax : float = float(self.config.get('wearvesc', 'cmax'))
+					batp : float = (cellv-cmin)/(cmax-cmin)*100
+
+					self.Data_Screen_Primary.ids.speed.text = f'{abs(speed):.1f}'
+					self.Data_Screen_Primary.ids.voltage.primary_text = f'{voltage:.2f} V'
+					self.Data_Screen_Primary.ids.voltage.secondary_text = f'{cellv:.2f} V'
+					self.Data_Screen_Primary.ids.current.text = f'{current:.2f} A'
+					self.Data_Screen_Primary.ids.dutycycle.value = int(round(abs(dutycycle), 0))
+					self.Data_Screen_Primary.ids.battery.value = int(round(min(batp, 100), 0))
+					self.Data_Screen_Primary.ids.temp.primary_text = f'FET\n{mostemp:.0f}°C'
+					self.Data_Screen_Primary.ids.temp.secondary_text = f'MOT\n{mottemp:.0f}°C'
+			
+				if packet.payload[0:len(packet_get_ballance.payload)] == packet_get_ballance.payload:
+					balappstate : int = struct.unpack('>H', packet.payload[25:27])[0]
+					if balappstate > 0:
+						footstate : int = struct.unpack('>H', packet.payload[27:29])[0]
+						footstates = ["OFF", "HALF", "FULL"]
+						self.Data_Screen_Primary.ids.state.text = f'{footstates[footstate]}'
+					else:
+						self.is_balance = False
+
+		def setAddress(instance):
+			Logger.info(f'WearVesc: Setting Address to {instance.address}')
+			self.config.set('wearvesc','address', instance.address)
+			self.update_config()
+			self.scanning = False
+			self.root.transition.direction = 'right'
+			self.root.current = 'dataPrimary'
 
 		while self.running:
 			try:
@@ -235,17 +289,9 @@ class MainApp(App):
 					self.Data_Screen_Primary.ids.status.text = "Disconnected"
 
 				if self.screen_manager.current == 'disclosure':
-					await asyncio.sleep(2)
 					continue
+				
 				#scann for devices
-
-				def setAddress(instance):
-					Logger.info(f'WearVesc: Setting Address to {instance.address}')
-					self.config.set('wearvesc','address', instance.address)
-					self.update_config()
-					self.scanning = False
-					self.root.transition.direction = 'right'
-					self.root.current = 'dataPrimary'
 
 				if self.scanning:
 					scanned_address = []
@@ -270,75 +316,28 @@ class MainApp(App):
 
 					continue
 
-				device = await bleak.BleakScanner.find_device_by_address(self.config.get('wearvesc', 'address'), 5)
-
-				if device == None:
-					Logger.info(f'WearVesc: Device Not Found')
-					continue
-
-				def handle_disconnect(_: bleak.BleakClient):
-					Logger.info(f'WearVesc: Device Disconnected')
-					self.Data_Screen_Primary.ids.status.text = "Disconnected"
-
-				def handle_rx(_: int, data: bytearray):
-					#Logger.info(f'WearVesc: Got Data {str(data)}')
-					self.buffer.extend(data)
-					found, packet = self.buffer.next_packet()
-
-					if found:
-						Logger.info(f'WearVesc: Found Packet {str(packet)}')
-						if packet.payload[0:len(packet_get_values.payload)] == packet_get_values.payload:
-							if self.config.get('wearvesc','unit') == 'KMH':
-								conversion_factor = 3.6
-							else:
-								conversion_factor = 2.237
-							mostemp : float = struct.unpack('>H', packet.payload[5:7])[0] / 10
-							mottemp : float = struct.unpack('>H', packet.payload[7:9])[0] / 10
-							current : float = struct.unpack('>i', packet.payload[9:13])[0] / 100
-							dutycycle : float = struct.unpack('>h', packet.payload[13:15])[0] / 10
-							speed : float = (struct.unpack('>i', packet.payload[15:19])[0] / 1000) * conversion_factor
-							voltage : float = struct.unpack('>H', packet.payload[19:21])[0] / 10
-
-							cells : int = int(self.config.get('wearvesc', 'cells'))
-							cellv : float = voltage / cells
-							cmin : float = float(self.config.get('wearvesc', 'cmin'))
-							cmax : float = float(self.config.get('wearvesc', 'cmax'))
-							batp : float = (cellv-cmin)/(cmax-cmin)*100
-
-							self.Data_Screen_Primary.ids.speed.text = f'{abs(speed):.1f}'
-							self.Data_Screen_Primary.ids.voltage.primary_text = f'{voltage:.2f} V'
-							self.Data_Screen_Primary.ids.voltage.secondary_text = f'{cellv:.2f} V'
-							self.Data_Screen_Primary.ids.current.text = f'{current:.2f} A'
-							self.Data_Screen_Primary.ids.dutycycle.value = int(round(abs(dutycycle), 0))
-							self.Data_Screen_Primary.ids.battery.value = int(round(min(batp, 100), 0))
-							self.Data_Screen_Primary.ids.temp.primary_text = f'FET\n{mostemp:.0f}°C'
-							self.Data_Screen_Primary.ids.temp.secondary_text = f'MOT\n{mottemp:.0f}°C'
-					
-						if packet.payload[0:len(packet_get_ballance.payload)] == packet_get_ballance.payload:
-							footstate : int = struct.unpack('>H', packet.payload[27:29])[0]
-							footstates = ["OFF", "HALF", "FULL"]
-							self.Data_Screen_Primary.ids.state.text = f'{footstates[footstate]}'
-
-				async with bleak.BleakClient(device, disconnected_callback=handle_disconnect) as client:
-					await asyncio.sleep(2)
+				async with bleak.BleakClient(self.config.get('wearvesc', 'address'), disconnected_callback=handle_disconnect) as client:
 					await client.start_notify(UART_TX_CHAR_UUID, handle_rx)
 					if client.is_connected:
 						self.Data_Screen_Primary.ids.status.text = "Connected"
 
 					while self.running and not self.scanning:
 						await asyncio.sleep(1/int(self.config.get('wearvesc', 'poll')))
-						await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_values.packet))
-						await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_ballance.packet))
+						if client.is_connected:
+							await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_values.packet))
+							if self.is_balance:
+								await client.write_gatt_char(UART_RX_CHAR_UUID, bytearray(packet_get_ballance.packet))
 
-			except:
-				Logger.exception('Bluetooth Error: damn')
+			except bleak.exc.BleakError as e:
+				Logger.info(f'WearVesc: {e}')
 				await asyncio.sleep(1)
+			except asyncio.exceptions.TimeoutError as e:
+				Logger.info(f'WearVesc: async Timeout Error')
+				await asyncio.sleep(1)
+
+async def main(app):
+	await asyncio.gather(app.async_run("asyncio"), app.bluetooth(), app.timekeeper())
 
 if __name__ == '__main__':
 	app = MainApp()
-	loop = asyncio.get_event_loop()
-	coroutines = (app.async_run("asyncio"), app.bluetooth(), app.timekeeper())
-	firstcompleted = asyncio.wait(coroutines, return_when=asyncio.FIRST_COMPLETED)
-	results, ongoing = loop.run_until_complete(firstcompleted)
-	for result in results:
-			result.result()  # raises exceptions from asyncio.wait
+	asyncio.run(main(app))
