@@ -20,7 +20,7 @@ if kivy.utils.platform == 'android':
 	from android.permissions import check_permission
 	from android.permissions import Permission
 
-from datetime import datetime
+from datetime import datetime, time
 #import plyer
 
 import asyncio
@@ -173,8 +173,6 @@ class MainApp(App):
 		self.screen_manager.add_widget(self.Scan_Screen)
 		self.screen_manager.add_widget(self.Disclosure_Screen)
 
-		self.screen_manager.current = 'dataPrimary'
-
 		if kivy.utils.platform == 'android':
 			if not check_permission(Permission.ACCESS_FINE_LOCATION):
 				self.screen_manager.current = 'disclosure'
@@ -226,6 +224,7 @@ class MainApp(App):
 		packet_get_ballance.size = 2
 		packet_get_ballance.payload = struct.pack('>B', 79)
 		packet_get_ballance.encode()
+
 		self.is_balance = True
 
 		def handle_disconnect(_: bleak.BleakClient):
@@ -283,16 +282,21 @@ class MainApp(App):
 			self.root.transition.direction = 'right'
 			self.root.current = 'dataPrimary'
 
+
+		while self.screen_manager.current == 'disclosure':
+			await asyncio.sleep(1)
+	
+		try:
+			device = await bleak.BleakScanner.find_device_by_address(self.config.get('wearvesc', 'address'), timeout=1)
+		except:
+			pass
+
 		while self.running:
 			try:
 				if hasattr(self, 'Data_Screen_Primary'):
 					self.Data_Screen_Primary.ids.status.text = "Disconnected"
 
-				if self.screen_manager.current == 'disclosure':
-					continue
-				
 				#scann for devices
-
 				if self.scanning:
 					scanned_address = []
 					def find_uart_device(device, adv):
@@ -312,7 +316,7 @@ class MainApp(App):
 					await asyncio.sleep(5.0)
 					await scanner.stop()
 
-					await asyncio.sleep(10)
+					await asyncio.sleep(5)
 
 					continue
 
