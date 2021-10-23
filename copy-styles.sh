@@ -1,0 +1,2 @@
+mkdir -p .buildozer/android/platform/build-armeabi-v7a/dists/wearvesc/src/main/res/values
+cp style/styles.xml .buildozer/android/platform/build-armeabi-v7a/dists/wearvesc/src/main/res/values/styles.xml
